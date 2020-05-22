@@ -13,48 +13,51 @@ public class FileManager {
     private Map<Integer, Integer> years;
     private Map<Integer, Integer> ordersCountInYear;
 
-    private static int DATE_INDEX = 1;
-    private static int EMAIL_INDEX = 2;
-    private static int ADRESS_INDEX = 3;
-    private static int PRICE_INDEX = 4;
-    private static int STATUS_INDEX = 5;
+    private static final int DATE_INDEX = 1;
+    private static final int EMAIL_INDEX = 2;
+    private static final int ADRESS_INDEX = 3;
+    private static final int PRICE_INDEX = 4;
+    private static final int STATUS_INDEX = 5;
+
+    private Date date;
 
     public void processFilterAction(String action) {
-        try
-        {
+        try {
             File tempFile = new File("modifiedFile.csv");
 
             BufferedReader reader = new BufferedReader(new FileReader(file));
             BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
 
-            String line;
+            rewriteToFile(action, reader, writer);
 
-            while((line = reader.readLine()) != null) {
-
-                switch (action) {
-                    case "emptyEmail":
-                        if (hasEmptyEmail(line))
-                            continue;
-                        break;
-                    case "emptyAddress":
-                        if (hasEmptyAddress(line))
-                            continue;
-                        break;
-                }
-
-                writer.write(line);
-                writer.write("\n");
-            }
             reader.close();
             writer.close();
 
             copyFileUsingStream(new FileInputStream(tempFile), file);
-        }
-        catch(IOException e)
-        {
+        } catch(IOException e) {
             e.printStackTrace();
         }
 
+    }
+
+    private void rewriteToFile(String action, BufferedReader reader, BufferedWriter writer) throws IOException {
+        String line;
+        while((line = reader.readLine()) != null) {
+
+            switch (action) {
+                case "emptyEmail":
+                    if (hasEmptyEmail(line))
+                        continue;
+                    break;
+                case "emptyAddress":
+                    if (hasEmptyAddress(line))
+                        continue;
+                    break;
+            }
+
+            writer.write(line);
+            writer.write("\n");
+        }
     }
 
     public void getAveragePriceOfOrdersPerYear(boolean isOrderPaid) {
@@ -159,10 +162,7 @@ public class FileManager {
             e.printStackTrace();
         }
 
-        Map sortedMap = usersOrderMap.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+        Map sortedMap = getMap(usersOrderMap);
 
         String output = "TOP 3 CUSTOMERS WITH MOST ORDERS" + "\n";
         for (int i = 0; i < sortedMap.entrySet().toArray().length; i++) {
@@ -171,6 +171,13 @@ public class FileManager {
             }
         }
         printToOutputFile(output);
+    }
+
+    private Map getMap(HashMap<String, Integer> usersOrderMap) {
+        return usersOrderMap.entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                            (oldValue, newValue) -> oldValue, LinkedHashMap::new));
     }
 
     private void storeUserWithOrders(String order, HashMap<String, Integer> usersOrderMap) {
@@ -191,12 +198,8 @@ public class FileManager {
         }
         if ((isOrderPaid && values[STATUS_INDEX].equals("PAID")) ||
                 !isOrderPaid && values[STATUS_INDEX].equals("UNPAID")) {
-            Date date = null;
-            try {
-                date = new SimpleDateFormat("dd.MM.yyyy").parse(values[DATE_INDEX]);
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
+
+            getDate(values);
             Integer year = date.getYear() + 1900;
             Integer currentValue = years.get(year);
             years.replace(year, currentValue + Integer.parseInt(values[PRICE_INDEX]));
@@ -208,15 +211,19 @@ public class FileManager {
         if (values.length < 5) {
             return;
         }
-        Date date = null;
+
+        getDate(values);
+        Integer year = date.getYear() + 1900;
+        Integer currentValue = years.get(year);
+        years.replace(year, currentValue + Integer.parseInt(values[PRICE_INDEX]));
+    }
+
+    private void getDate(String[] values) {
         try {
             date = new SimpleDateFormat("dd.MM.yyyy").parse(values[DATE_INDEX]);
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        Integer year = date.getYear() + 1900;
-        Integer currentValue = years.get(year);
-        years.replace(year, currentValue + Integer.parseInt(values[PRICE_INDEX]));
     }
 
     private boolean hasEmptyAddress(String line) {
@@ -264,13 +271,7 @@ public class FileManager {
                 String[] values = line.split(",");
                 Date date = new SimpleDateFormat("dd.MM.yyyy").parse(values[DATE_INDEX]);
                 Integer year = date.getYear() + 1900;
-                if (!years.containsKey(year)) {
-                    years.put(year, 0);
-                    ordersCountInYear.put(year, 1);
-                } else {
-                    Integer currentValue = ordersCountInYear.get(year);
-                    ordersCountInYear.replace(year, currentValue + 1);
-                }
+                updateMapOfYears(year);
             }
             reader.close();
             fr.close();
@@ -278,6 +279,16 @@ public class FileManager {
         catch(IOException | ParseException e)
         {
             e.printStackTrace();
+        }
+    }
+
+    private void updateMapOfYears(Integer year) {
+        if (!years.containsKey(year)) {
+            years.put(year, 0);
+            ordersCountInYear.put(year, 1);
+        } else {
+            Integer currentValue = ordersCountInYear.get(year);
+            ordersCountInYear.replace(year, currentValue + 1);
         }
     }
 

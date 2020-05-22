@@ -17,17 +17,18 @@ public class CommandParser {
 
         // if the input is correct
         if (parseCommandLine()) {
-
-            fileManager.setFile(params.get("-d").get(0));
-
+            setFile();
             fileManager.fillMapOfYears();
             processCommands();
         }
     }
 
+    private void setFile() {
+        fileManager.setFile(params.get("-d").get(0));
+    }
+
     private void processCommands() {
-        String outputFilePath = params.get("-o").get(1);
-        fileManager.setOutputFile(outputFilePath);
+        setOutputFile();
 
         for (String manipulationMethod : params.get("-m")) {
             switch (manipulationMethod) {
@@ -56,23 +57,21 @@ public class CommandParser {
         }
     }
 
+    private void setOutputFile() {
+        String outputFilePath = params.get("-o").get(1);
+        fileManager.setOutputFile(outputFilePath);
+    }
+
     private boolean parseCommandLine() {
 
-        if (commandStr.length < 6 ) {
-            System.err.println("Invalid input!");
-            return false;
-        }
+        if (isCommandFull()) return false;
 
         List<String> options = null;
         for (final String input : commandStr) {
             if (input.charAt(0) == '-') {
-                if (input.length() != 2) {
-                    System.err.println("Error at argument " + input + "!");
-                    return false;
-                }
+                if (isValidCommand(input)) return false;
 
-                options = new ArrayList<>();
-                params.put(input, options);
+                options = storeNewCommand(input);
             } else if (options != null) {
                 options.add(input);
             } else {
@@ -81,11 +80,38 @@ public class CommandParser {
             }
         }
 
-        if (!params.keySet().contains("-d") || !params.keySet().contains("-m") || !params.keySet().contains("-o")) {
+        return !missingMandatoryParameters();
+    }
+
+    private boolean missingMandatoryParameters() {
+        if (!params.containsKey("-d") || !params.containsKey("-m") || !params.containsKey("-o")) {
             System.err.println("Missing parameters!");
-            return false;
+            return true;
         }
-        return true;
+        return false;
+    }
+
+    private List<String> storeNewCommand(String input) {
+        List<String> options;
+        options = new ArrayList<>();
+        params.put(input, options);
+        return options;
+    }
+
+    private boolean isValidCommand(String input) {
+        if (input.length() != 2) {
+            System.err.println("Error at argument " + input + "!");
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isCommandFull() {
+        if (commandStr.length < 6 ) {
+            System.err.println("Invalid input!");
+            return true;
+        }
+        return false;
     }
 
 }
