@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="da-tool:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/da_tool_jar</output-path>
-    <root id="archive" name="da-tool.jar">
-      <element id="module-output" name="da-tool" />
-    </root>
-  </artifact>
-</component>

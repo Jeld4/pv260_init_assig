@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="pv260_init_assig:jar">
+    <output-path>$PROJECT_DIR$/first_assignment/out/artifacts</output-path>
+    <root id="archive" name="pv260_init_assig.jar">
+      <element id="module-output" name="pv260_init_assig" />
+    </root>
+  </artifact>
+</component>
